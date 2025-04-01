@@ -78,12 +78,20 @@ cd src && pyinstaller tasks_api.spec
 Now let's create the Applications directory (if it doesn't exist) and copy the executable:
 
 ```bash
-mkdir -p ~/Applications && cp -r dist/tasks_api ~/Applications/
+mkdir -p ~/Applications
+ln -s "$(pwd)/dist/tasks_api" ~/Applications/
 ```
 Now let's set up the menu bar control by making the xbar plugin executable and copying it to the correct location:
 
 ```bash
-chmod +x tasks_api.1m.sh && mkdir -p ~/Library/Application\ Support/xbar/plugins/ && cp tasks_api.1m.sh ~/Library/Application\ Support/xbar/plugins/
+mkdir -p ~/Library/Application\ Support/xbar/plugins/
+chmod +x src/tasks_api.1m.sh
+ln -s "$(pwd)/src/tasks_api.1m.sh" ~/Library/Application\ Support/xbar/plugins/
+
+~/Library/Application\ Support/xbar/plugins/tasks_api.1m.sh
+
+
+
 ```
 The Tasks API has been successfully installed! Here's a summary of what was done:
 

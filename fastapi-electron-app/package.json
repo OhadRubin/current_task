@@ -6,9 +6,10 @@
   "scripts": {
     "start": "electron .",
     "build-server": "node build-server.js",
-    "build": "npm run build-server && electron-builder",
+    "build-icons": "node create-icons.js",
+    "build": "npm run build-icons && npm run build-server && electron-builder",
     "pack": "npm run build-server && electron-builder --dir",
-    "dist": "npm run build-server && electron-builder"
+    "dist": "npm run build-icons && npm run build-server && electron-builder"
   },
   "keywords": ["fastapi", "electron", "server"],
   "author": "",

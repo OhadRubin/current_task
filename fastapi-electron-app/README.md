@@ -2,6 +2,25 @@
 
 This application wraps a FastAPI server in an Electron desktop application, providing a native-like experience for users.
 
+## Quick Start Guide
+
+### Building & Packaging
+
+```bash
+# Install dependencies
+npm install
+
+# Package for distribution (creates installable in dist/ folder)
+npm run dist
+
+# For specific platforms
+npm run dist -- --mac     # macOS
+npm run dist -- --win     # Windows
+npm run dist -- --linux   # Linux
+```
+
+For a detailed build guide, see [BUILD_GUIDE.md](./BUILD_GUIDE.md).
+
 ## Features
 
 - Native macOS integration with menu bar

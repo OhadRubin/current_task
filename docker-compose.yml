@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.server
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped 
+  portr:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.portr
+    environment:
+      - PORTR_KEY=${PORTR_KEY}
+      - GATEWAY_DOMAIN=${GATEWAY_DOMAIN}
+    depends_on:
+      - redis
+    network_mode: host
+    restart: unless-stopped

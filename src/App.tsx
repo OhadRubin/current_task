@@ -10,28 +10,142 @@ interface Task {
 }
 
 function App() {
-  const initialTasks: Task[] = [
-    { name: 'Finish ray implementation', timeframe: '20 hours', completed: false, id: '1' },
-    { name: 'Finish database project', timeframe: '6 days', completed: false, id: '2' },
-    { name: 'Finish courses', timeframe: '4.5 months', completed: false, id: '3' },
-    { name: 'Finish PhD', timeframe: '4.42 years', completed: false, id: '4' },
-    { name: 'Succeed', timeframe: '33.15 years', completed: false, id: '5' },
-  ];
-
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [showHeader, setShowHeader] = useState(false);
   
+  // Fetch tasks from API
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:8001/tasks');
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
+        }
+        const data = await response.json();
+        setTasks(data);
+        setError('');
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+        setError('Failed to load tasks. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+  
+  // Connect to SSE endpoint
+  useEffect(() => {
+    // Create EventSource connection
+    const eventSource = new EventSource('http://localhost:8001/events');
+    
+    // Handle initial data
+    eventSource.addEventListener('initial', (event) => {
+      try {
+        console.log('SSE: Received initial data', event.data);
+        const data = JSON.parse(event.data);
+        if (data.tasks) {
+          setTasks(data.tasks);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error parsing initial event data:', err);
+      }
+    });
+    
+    // Handle updates
+    eventSource.addEventListener('update', (event) => {
+      try {
+        console.log('SSE: Received update event', event.data);
+        const data = JSON.parse(event.data);
+        
+        if (data.action === 'push') {
+          console.log('SSE: Processing push action', data.task);
+          // Add new task to the beginning of the array (push to stack)
+          setTasks(currentTasks => [data.task, ...currentTasks]);
+          
+          // Show a brief notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed bottom-8 right-8 bg-green-500 text-white p-4 rounded-lg shadow-lg';
+          notification.textContent = `New task added: ${data.task.name}`;
+          document.body.appendChild(notification);
+          
+          // Remove notification after 3 seconds
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+          
+          // Scroll to the newly added task (which will be at the bottom of the display after reversal)
+          setTimeout(() => {
+            if (scrollContainerRef.current) {
+              // Last task element is the first/newest task in the data but appears at the bottom due to reversal
+              const lastTaskElement = scrollContainerRef.current.querySelector('.task-item:last-child');
+              if (lastTaskElement) {
+                lastTaskElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }, 100); // Small delay to ensure DOM has updated
+        } 
+        else if (data.action === 'pop') {
+          console.log('SSE: Processing pop action', data.task_id);
+          // Remove the first task from the stack (most recent one)
+          setTasks(currentTasks => currentTasks.filter(task => task.id !== data.task_id));
+          
+          // Show a notification
+          const notification = document.createElement('div');
+          notification.className = 'fixed bottom-8 right-8 bg-blue-500 text-white p-4 rounded-lg shadow-lg';
+          notification.textContent = 'Task completed and removed from stack';
+          document.body.appendChild(notification);
+          
+          // Remove notification after 3 seconds
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        }
+        else if (data.action === 'update') {
+          console.log('SSE: Processing update action', data.task);
+          // Update existing task
+          setTasks(currentTasks => 
+            currentTasks.map(task => 
+              task.id === data.task.id ? data.task : task
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Error handling update event:', err);
+      }
+    });
+    
+    // Handle connection error
+    eventSource.onerror = (error) => {
+      console.error('EventSource connection error', error);
+      eventSource.close();
+    };
+    
+    // Cleanup function
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+  
   // Auto-scroll to bottom (first task) on component mount
   useEffect(() => {
-    // Small delay to ensure everything is rendered
-    setTimeout(() => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    if (tasks.length > 0 && scrollContainerRef.current) {
+      // Get the last task element
+      const lastTaskElement = scrollContainerRef.current.querySelector('.task-item:last-child');
+      
+      if (lastTaskElement) {
+        // Use scrollIntoView to respect snap points and scroll padding
+        lastTaskElement.scrollIntoView({ block: 'start' });
       }
-    }, 100);
-  }, []);
+    }
+  }, [tasks.length]);
   
   // Handle scroll to update current task index and header visibility
   useEffect(() => {
@@ -82,10 +196,47 @@ function App() {
     };
   }, [tasks]);
   
-  const toggleTaskCompletion = (id: string) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  const toggleTaskCompletion = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:8001/tasks/${id}/toggle`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to toggle task');
+      }
+      
+      const updatedTask = await response.json();
+      
+      // Update local state to reflect the change
+      setTasks(tasks.map(task => 
+        task.id === id ? { ...task, completed: updatedTask.completed } : task
+      ));
+    } catch (err) {
+      console.error('Error toggling task:', err);
+      setError('Failed to update task. Please try again.');
+    }
+  };
+
+  // New function to pop a task
+  const popTask = async () => {
+    try {
+      const response = await fetch('http://localhost:8001/tasks/pop', {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to pop task');
+      }
+      
+      // No need to update local state as SSE will handle it
+    } catch (err) {
+      console.error('Error popping task:', err);
+      setError('Failed to pop task. Please try again.');
+    }
   };
 
   // Reverse the tasks array to display them in reverse order (long-term at top, short-term at bottom)
@@ -102,8 +253,29 @@ function App() {
   
   const nextTask = getNextVisibleTask();
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading tasks...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100 text-red-500">{error}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Floating Pop Task button */}
+      <motion.button
+        className="fixed right-8 top-8 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full shadow-lg z-20 flex items-center"
+        onClick={popTask}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        Pop Task
+      </motion.button>
+
       {/* Fixed header showing next task */}
       {showHeader && nextTask && (
         <motion.div 

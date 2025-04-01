@@ -1,5 +1,11 @@
 # React GitHub Pages Template
 
+  curl -X POST http://localhost:8001/tasks \
+    -H "Content-Type: application/json" \
+    -d '{"name":"New task from curl","timeframe":"3 days","completed":false}'
+
+    
+  curl -X DELETE http://localhost:8001/tasks/pop
 A template for creating and deploying React applications to GitHub Pages with Tailwind CSS using one-click deployment.
 
 ## Features

@@ -12,7 +12,7 @@ services:
     # Correct command structure: portr [global options] command [command options] [arguments]
     # Assuming api-server:8001 is the address:port INSIDE the docker network
     # that you want to expose via the tunnel.
-    command: ["http", "8001", "-s", "direct-test"]
+    command: ["http", "8001", "-s", "current-task"]
     depends_on:
       - api-server
     network_mode: host

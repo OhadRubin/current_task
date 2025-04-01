@@ -22,7 +22,7 @@ function App() {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8001/tasks');
+        const response = await fetch('https://current-task.ohadrubin/tasks');
         if (!response.ok) {
           throw new Error('Failed to fetch tasks');
         }
@@ -43,7 +43,7 @@ function App() {
   // Connect to SSE endpoint
   useEffect(() => {
     // Create EventSource connection
-    const eventSource = new EventSource('http://localhost:8001/events');
+    const eventSource = new EventSource('https://current-task.ohadrubin.com/events');
     
     // Handle initial data
     eventSource.addEventListener('initial', (event) => {
@@ -198,7 +198,7 @@ function App() {
   
   const toggleTaskCompletion = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8001/tasks/${id}/toggle`, {
+      const response = await fetch(`https://current-task.ohadrubin/tasks/${id}/toggle`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ function App() {
   // New function to pop a task
   const popTask = async () => {
     try {
-      const response = await fetch('http://localhost:8001/tasks/pop', {
+      const response = await fetch('https://current-task.ohadrubin/tasks/pop', {
         method: 'DELETE',
       });
       

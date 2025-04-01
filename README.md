@@ -1,11 +1,14 @@
 # React GitHub Pages Template
 
+sudo docker-compose down
+sudo docker-compose logs 
+
   curl -X POST https://current-task.ohadrubin.com/tasks \
     -H "Content-Type: application/json" \
     -d '{"name":"New task from curl","timeframe":"3 days","completed":false}'
 
 
-  curl -X DELETE http://localhost:8001/tasks/pop
+  curl -X DELETE https://current-task.ohadrubin.com/tasks/pop
 A template for creating and deploying React applications to GitHub Pages with Tailwind CSS using one-click deployment.
 
 ## Features

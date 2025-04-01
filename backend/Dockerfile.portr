@@ -1,14 +1,24 @@
-FROM ubuntu:22.04
-
-RUN apt-get update && apt-get install -y wget unzip
+FROM alpine:3.20
 
 WORKDIR /app
 
-RUN wget https://github.com/amalshaji/portr/releases/download/0.0.27-beta/portr_0.0.27-beta_Linux_x86_64.zip && \
-    unzip portr_0.0.27-beta_Linux_x86_64.zip && \
-    rm portr_0.0.27-beta_Linux_x86_64.zip
+RUN apk add --no-cache curl unzip
 
-COPY start_tunnel.sh .
-RUN chmod +x start_tunnel.sh
+# Download the latest release of portr client
+RUN PORTR_VERSION=$(curl -s https://api.github.com/repos/amalshaji/portr/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    curl -L "https://github.com/amalshaji/portr/releases/download/${PORTR_VERSION}/portr_${PORTR_VERSION}_Linux_x86_64.zip" -o portr.zip && \
+    unzip portr.zip && \
+    rm portr.zip && \
+    chmod +x portr
 
-CMD ["./start_tunnel.sh"]
+# Create a wrapper script
+RUN printf '#!/bin/sh\n\
+if [ "$1" = "http" ] || [ "$1" = "tcp" ] || [ "$1" = "ws" ]; then\n\
+  ./portr auth set -t $PORTR_SECRET_KEY -r $PORTR_SERVER_URL > /dev/null 2>&1\n\
+  ./portr "$@"\n\
+else\n\
+  ./portr "$@"\n\
+fi\n' > /app/wrapper.sh && \
+    chmod +x /app/wrapper.sh
+
+ENTRYPOINT ["/app/wrapper.sh"] 

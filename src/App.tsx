@@ -22,7 +22,7 @@ function App() {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://current-task.ohadrubin/tasks');
+        const response = await fetch('https://current-task.ohadrubin.com/tasks');
         if (!response.ok) {
           throw new Error('Failed to fetch tasks');
         }
@@ -198,7 +198,7 @@ function App() {
   
   const toggleTaskCompletion = async (id: string) => {
     try {
-      const response = await fetch(`https://current-task.ohadrubin/tasks/${id}/toggle`, {
+      const response = await fetch(`https://current-task.ohadrubin.com/tasks/${id}/toggle`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ function App() {
   // New function to pop a task
   const popTask = async () => {
     try {
-      const response = await fetch('https://current-task.ohadrubin/tasks/pop', {
+      const response = await fetch('https://current-task.ohadrubin.com/tasks/pop', {
         method: 'DELETE',
       });
       

@@ -1,6 +1,6 @@
 # React GitHub Pages Template
 
-  curl -X POST http://localhost:8001/tasks \
+  curl -X POST https://current-task.ohadrubin.com/tasks \
     -H "Content-Type: application/json" \
     -d '{"name":"New task from curl","timeframe":"3 days","completed":false}'
 

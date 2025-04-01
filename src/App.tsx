@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 
+
+
 interface Task {
   id: string;
   name: string;

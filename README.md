@@ -62,7 +62,7 @@ Your app will be available at the URL provided in the console output.
 
 If the initialization fails:
 
-- Make sure GitHub CLI is installed: `gh --version`
+- Make sure GitHub CLI   is installed: `gh --version`
 - Make sure you're logged in to GitHub: `gh auth status`
 - Check error messages in the console output
 
